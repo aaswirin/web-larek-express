@@ -58,9 +58,7 @@ const readProducts = async (
   next: NextFunction,
 ) => {
   try {
-    console.log('Starting products');
     const products: IProduct[] = await Product.find();
-    console.log(products);
 
     /* Отдать все товары */
     res.status(200).json({
