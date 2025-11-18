@@ -1,5 +1,5 @@
 /**
- * Контроллер для товара
+ * Контроллеры для товара
  */
 
 import { NextFunction, Request, Response } from 'express';

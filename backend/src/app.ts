@@ -10,6 +10,8 @@ import config from './config';
 
 /* Роутеры */
 import productRoutes from './routes/product';
+import authRoutes from "./routes/auth";
+
 
 const app = express();
 
@@ -18,8 +20,6 @@ mongoose.connect(config.database.address)
   .catch((error) => console.log(error));
 
 mongoose.set('debug', true);
-// const collections = Object.keys(mongoose.connection.collections);
-// console.log(collections);
 
 app.use(cors());
 
@@ -30,7 +30,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/product', productRoutes);
 // app.use('/order', );
 /* Авторизация и прочая и прочая */
-// app.use('/auth', );
+app.use('/auth', authRoutes);
 /* Загрузка файлов */
 // app.use('/upload', );
 
