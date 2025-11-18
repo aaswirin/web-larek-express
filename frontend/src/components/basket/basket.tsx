@@ -4,12 +4,11 @@ import { useActionCreators, useSelector } from '../../services/hooks';
 import { basketActions, basketSelector } from '../../services/slice/basket';
 import { orderActions } from '../../services/slice/order';
 import { AppRoute } from '../../utils/constants';
-import { addSpacesToNumber } from '../../utils/product-utils';
 import { IProduct } from '../../utils/types';
 import BasketItem from '../basket-item/basket-item';
 import Button from '../button/button';
 import styles from './basket.module.scss';
-
+import { convertPriceToString } from "../../utils/product-utils";
 
 export default function Basket() {
 	const location = useLocation()
@@ -43,7 +42,7 @@ export default function Basket() {
 		</ul>
 		<div className={styles.modal__actions}>
 			<Button extraClass={styles.button} onClick={() => setItems({items: itemsIds, total: amount})} component={Link} to={{pathname: AppRoute.OrderAddress}} state={{background: {...location, pathname: '/', state: null}}} replace>Оформить</Button>
-			<span className={styles.basket__amount}>{addSpacesToNumber(amount)} синапсов</span>
+			<span className={styles.basket__amount}>{convertPriceToString(amount)}</span>
 		</div>
 	</div>
 	)

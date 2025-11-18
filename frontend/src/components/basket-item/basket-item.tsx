@@ -2,6 +2,8 @@ import clsx from 'clsx';
 import { ElementType } from 'react';
 import { IProduct } from '../../utils/types';
 import styles from './basket-item.module.scss';
+import { convertPriceToString } from "../../utils/product-utils";
+
 type BasketItemProps = {
 	dataProduct: IProduct;
 	component: ElementType;
@@ -14,7 +16,7 @@ export default function BasketItem( { dataProduct, component: Component, index, 
 			<Component className={clsx(styles.basket__item)}>
 				<span className={styles.basket__item_index}>{index}</span>
 				<span className={styles.basket__title}>{title}</span>
-				<span className={styles.basket__price}>{price} синапсов</span>
+				<span className={styles.basket__price}>{convertPriceToString(price)}</span>
 				<button className={styles.basket__item_delete} aria-label="удалить" onClick={() => deleteProductInBasket(_id)}></button>
 			</Component>
 	)
