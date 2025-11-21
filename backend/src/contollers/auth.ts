@@ -8,16 +8,24 @@ import {
   NextFunction,
 } from 'express';
 import bcrypt from 'bcryptjs';
-import User from '../models/user';
+import jwt from 'jsonwebtoken';
 
+import User from '../models/user';
 import BadRequestError from '../errors/bad-request-error';
 import NotFoundError from '../errors/not-found-error';
 import UnauthorizedError from '../errors/unauthorized-error';
+import ConflictError from '../errors/conflict-error';
+import config from '../config';
+import { getExpiryInSeconds, createToken } from '../utils/auth';
+
+/* Время жизни токенов в мсек */
+const accessExpiresInSeconds = getExpiryInSeconds(config.auth.accessExpires as string);
+const refreshExpiresInSeconds = getExpiryInSeconds(config.auth.refreshExpires as string);
 
 /**
  * Регистрация
- * @param req  - запрос, новый товар
- * @param res  - ответ, созданный товар
+ * @param req  - запрос, данные пользователя
+ * @param res  - ответ, 201 и пользователь
  * @param next - следующий обработчик
  */
 const register = async (
@@ -32,12 +40,38 @@ const register = async (
       return next(new BadRequestError('Все поля должны быть указаны'));
     }
 
-    const hash = '';
+    const isExistUser = await User.findOne({ email }).select('+tokens');
+
+    if (isExistUser) return next(new ConflictError('Пользователь с таким email уже существует'));
+
+    /* Всё нормально, можно сохранять */
+    const hash = await bcrypt.hash(password, 10);
     const user = await User.create({
       name, email, password: hash, tokens: [],
     });
 
-    const accessToken = '';
+    /* Всё про токены */
+    const accessToken = createToken(
+      { _id: user._id },
+      config.auth.accessSecret as string,
+      accessExpiresInSeconds,
+    );
+    const refreshToken = createToken(
+      { _id: user._id },
+      config.auth.refreshSecret as string,
+      refreshExpiresInSeconds,
+    );
+    user.tokens.push({ token: refreshToken });
+
+    await user.save();
+
+    res.cookie('REFRESH_TOKEN', refreshToken, {
+      sameSite: 'none',
+      secure: true,
+      httpOnly: true,
+      maxAge: refreshExpiresInSeconds * 1000,
+    });
+
     res.status(201).json({
       success: true,
       user: { name: user.name, email: user.email, id: user._id },
@@ -46,30 +80,52 @@ const register = async (
   } catch (error: any) {
     next(error);
   }
+
+  return null;
 };
 
 /**
  * Авторизация
- * @param req  - запрос, новый товар
- * @param res  - ответ, созданный товар
+ * @param req  - запрос, почта и пароль
+ * @param res  - ответ, всё хорошо
  * @param next - следующий обработчик
  */
-const login = async (req: Request, res: Response, next: NextFunction) => {
+const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return next(new BadRequestError('Все поля должны быть указаны'));
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password +tokens');
     if (!user) return next(new UnauthorizedError('Неверные почта или пароль'));
 
     const isCompare = await bcrypt.compare(password, user.password);
     if (!isCompare) return next(new UnauthorizedError('Неверные почта или пароль'));
 
-    const accessToken = '';
-    const refreshToken = '';
+    /* Всё про токены */
+    const accessToken = createToken(
+      { _id: user._id },
+      config.auth.accessSecret as string,
+      accessExpiresInSeconds,
+    );
+    const refreshToken = createToken(
+      { _id: user._id },
+      config.auth.refreshSecret as string,
+      refreshExpiresInSeconds,
+    );
 
     user.tokens.push({ token: refreshToken });
     await user.save();
+
+    res.cookie('REFRESH_TOKEN', refreshToken, {
+      sameSite: 'none',
+      secure: true,
+      httpOnly: true,
+      maxAge: refreshExpiresInSeconds * 1000,
+    });
 
     res.status(200).json({
       success: true,
@@ -79,22 +135,29 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   } catch (error: any) {
     next(error);
   }
+
+  return null;
 };
 
 /**
  * Получить пользователя
- * @param req
- * @param res
- * @param next
+ * @param req  - запрос, авторизация
+ * @param res  - ответ, всё хорошо
+ * @param next - следующий обработчик
  */
-const user = async (req: Request, res: Response, next: NextFunction) => {
+const getUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) return next(new UnauthorizedError('Пользователь не авторизован'));
 
     const token = authHeader.replace('Bearer ', '');
+    const payload:any = jwt.verify(token, config.auth.accessSecret as string);
 
-    const user = await User.findById(token);
+    const user = await User.findById(payload._id);
     if (!user) return next(new NotFoundError('Пользователь не найден'));
 
     res.status(200).json({
@@ -104,26 +167,41 @@ const user = async (req: Request, res: Response, next: NextFunction) => {
   } catch (error: any) {
     next(error);
   }
+
+  return null;
 };
 
 /**
  * Выход
- * @param req
- * @param res
- * @param next
+ * @param req  - запрос, токен
+ * @param res  - ответ, всё хорошо
+ * @param next - следующий обработчик
  */
 const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { refreshToken } = req.cookies || {};
-    if (!refreshToken) return next(new BadRequestError('Пользователь не найден'));
+    const { REFRESH_TOKEN } = req.cookies || {};
+    if (!REFRESH_TOKEN) return next(new BadRequestError('Пользователь не найден'));
+    const payload:any = jwt.verify(REFRESH_TOKEN, config.auth.accessSecret as string);
 
-    const user = await User.findById(refreshToken);
+    const user = await User.findById(payload._id).select('+tokens');
     if (!user) return next(new NotFoundError('Пользователь не найден'));
+
+    user.tokens = user.tokens.filter((token) => token.token !== REFRESH_TOKEN);
+    await user.save();
+
+    res.cookie('REFRESH_TOKEN', REFRESH_TOKEN, {
+      sameSite: 'none',
+      secure: true,
+      httpOnly: true,
+      maxAge: refreshExpiresInSeconds * 1000,
+    });
 
     res.json({ success: true });
   } catch (err: any) {
     next(err);
   }
+
+  return null;
 };
 
 /**
@@ -134,26 +212,55 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
  */
 const refreshAccessToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { refreshToken } = req.cookies || {};
-    if (!refreshToken) return next(new UnauthorizedError('Пользователь не найден'));
+    const { REFRESH_TOKEN } = req.cookies || {};
+    if (!REFRESH_TOKEN) return next(new UnauthorizedError('Пользователь не найден'));
 
-    const user = await User.findById(refreshToken);
+    const payload:any = jwt.verify(REFRESH_TOKEN, config.auth.accessSecret as string);
+    const user = await User.findById(payload._id).select('+tokens');
     if (!user) return next(new NotFoundError('Пользователь не найден'));
+
+    const isExistsToken = user.tokens.some((token) => token.token === REFRESH_TOKEN);
+    if (!isExistsToken) return next(new UnauthorizedError('Токен не действителен'));
+
+    /* Всё про токены */
+    const accessToken = createToken(
+      { _id: user._id },
+      config.auth.accessSecret as string,
+      accessExpiresInSeconds,
+    );
+    const refreshToken = createToken(
+      { _id: user._id },
+      config.auth.refreshSecret as string,
+      refreshExpiresInSeconds,
+    );
+
+    user.tokens = user.tokens.filter((token) => token.token !== REFRESH_TOKEN);
+    user.tokens.push({ token: refreshToken });
+    await user.save();
+
+    res.cookie('REFRESH_TOKEN', refreshToken, {
+      sameSite: 'none',
+      secure: true,
+      httpOnly: true,
+      maxAge: refreshExpiresInSeconds * 1000,
+    });
 
     res.json({
       success: true,
       user: { name: user.name, email: user.email },
-      accessToken: refreshToken,
+      accessToken,
     });
   } catch (err: any) {
     next(err);
   }
+
+  return null;
 };
 
 export {
   register,
   login,
-  user,
+  getUser,
   logout,
   refreshAccessToken,
 };

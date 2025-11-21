@@ -44,6 +44,8 @@ const createProduct = async (
     /* Что-то другое */
     next(error);
   }
+
+  return null;
 };
 
 /**
@@ -68,6 +70,8 @@ const readProducts = async (
   } catch (error) {
     next(error);
   }
+
+  return null;
 };
 
 /**
@@ -107,6 +111,8 @@ const updateProduct = async (
     /* Что-то другое */
     next(error);
   }
+
+  return null;
 };
 
 /**
@@ -137,6 +143,8 @@ const deleteProduct = async (
     /* Что-то пошло не так */
     next(error);
   }
+
+  return null;
 };
 
 /* CRUD */

@@ -1,0 +1,47 @@
+openapi: 3.0.0
+info:
+  title: Web-ларёк
+  description: API для приложения Web-ларёк
+  contact:
+    email: andrey.a.svirin@yandex.ru
+  version: 1.0.0
+tags:
+  - name: Товары
+    description: Управление товарами
+  - name: Авторизация
+    description: Управление авторизацией
+paths:
+  /:
+    get:
+      description: Выгрузить список товаров
+      tags: [Товары]
+    post:
+      description: Создать новый товар
+      tags: [Товары]
+  /{productId}:
+    patch:
+      description: Обновить данные о товаре
+      tags: [Товары]
+    delete:
+      description: Удалить товар
+      tags: [Товары]
+  /register:
+    post:
+      description: Выгрузить список товаров
+      tags: [Авторизация]
+  /login:
+    post:
+      description: Выгрузить список товаров
+      tags: [Авторизация]
+  /user:
+    get:
+      description: Выгрузить список товаров
+      tags: [Авторизация]
+  /logout:
+    get:
+      description: Выгрузить список товаров
+      tags: [Авторизация]
+  /token:
+    get:
+      description: Выгрузить список товаров
+      tags: [Авторизация]
