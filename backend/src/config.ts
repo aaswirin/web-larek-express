@@ -24,6 +24,11 @@ const config = {
   database: {
     address: process.env.DB_ADDRESS || 'mongodb://localhost:27017/weblarek',
   },
+
+  /* Это cors */
+  cors: {
+    originAllow: process.env.ORIGIN_ALLOW || '*',
+  },
 };
 
 export default config;

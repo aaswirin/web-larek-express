@@ -3,13 +3,21 @@
  */
 
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { ObjectId } from 'mongoose';
+import config from '../config';
+
+/* Оба два токена */
+type TTokens = {
+  accessToken: string;
+  refreshToken: string;
+}
 
 /**
  * Перевести строку вида 'Nc' в секунды, где
  *   N - число
  *   c - символ из набора: 'm'- минута, 'h' - час, 'd' - день
- * @param expiry - строка 'Nc'
- * @return       - количество секунд
+ * @param expiry  - строка 'Nc'
+ * @return number - количество секунд
  */
 const getExpiryInSeconds = (expiry: string): number => {
   // По умолчанию 3 дня
@@ -48,6 +56,7 @@ const getExpiryInSeconds = (expiry: string): number => {
  * @param payload - из чего создать
  * @param secret  - секретик
  * @param expires - сколько будет жить в секундах
+ * @return string - токен
  */
 const createToken = (
   payload: object,
@@ -55,7 +64,34 @@ const createToken = (
   expires: number,
 ): string => jwt.sign(payload, secret, { expiresIn: expires } as SignOptions);
 
+/**
+ * Получить сразу два токена
+ * @param userId         - Id пользователя
+ * @param expiryAccess   - Время жизни токена в секундах
+ * @param expiryRefresh  - Время жизни токена в секундах
+ * @return TTokens        - Токены {accessToken, refreshToken}
+ */
+const createTwoTokens = (
+  userId: ObjectId,
+  expiryAccess: number,
+  expiryRefresh: number,
+): TTokens => {
+  const accessToken = createToken(
+    { _id: userId },
+    config.auth.accessSecret as string,
+    expiryAccess,
+  );
+  const refreshToken = createToken(
+    { _id: userId },
+    config.auth.refreshSecret as string,
+    expiryRefresh,
+  );
+
+  return { accessToken, refreshToken };
+};
+
 export {
   getExpiryInSeconds,
   createToken,
+  createTwoTokens,
 };

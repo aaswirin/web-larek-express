@@ -9,16 +9,20 @@ import {
 } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { ObjectId } from 'mongoose';
 
+import config from '../config';
 import User from '../models/user';
 import BadRequestError from '../errors/bad-request-error';
 import NotFoundError from '../errors/not-found-error';
 import UnauthorizedError from '../errors/unauthorized-error';
 import ConflictError from '../errors/conflict-error';
-import config from '../config';
-import { getExpiryInSeconds, createToken } from '../utils/auth';
+import {
+  getExpiryInSeconds,
+  createTwoTokens,
+} from '../utils/auth';
 
-/* Время жизни токенов в мсек */
+/* Время жизни токенов в секундах */
 const accessExpiresInSeconds = getExpiryInSeconds(config.auth.accessExpires as string);
 const refreshExpiresInSeconds = getExpiryInSeconds(config.auth.refreshExpires as string);
 
@@ -51,20 +55,16 @@ const register = async (
     });
 
     /* Всё про токены */
-    const accessToken = createToken(
-      { _id: user._id },
-      config.auth.accessSecret as string,
+    const { accessToken, refreshToken } = createTwoTokens(
+      user._id as unknown as ObjectId,
       accessExpiresInSeconds,
-    );
-    const refreshToken = createToken(
-      { _id: user._id },
-      config.auth.refreshSecret as string,
       refreshExpiresInSeconds,
     );
     user.tokens.push({ token: refreshToken });
 
     await user.save();
 
+    console.log(refreshToken, refreshExpiresInSeconds);
     res.cookie('REFRESH_TOKEN', refreshToken, {
       sameSite: 'none',
       secure: true,
@@ -106,17 +106,11 @@ const login = async (
     if (!isCompare) return next(new UnauthorizedError('Неверные почта или пароль'));
 
     /* Всё про токены */
-    const accessToken = createToken(
-      { _id: user._id },
-      config.auth.accessSecret as string,
+    const { accessToken, refreshToken } = createTwoTokens(
+      user._id as unknown as ObjectId,
       accessExpiresInSeconds,
-    );
-    const refreshToken = createToken(
-      { _id: user._id },
-      config.auth.refreshSecret as string,
       refreshExpiresInSeconds,
     );
-
     user.tokens.push({ token: refreshToken });
     await user.save();
 
@@ -181,7 +175,7 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { REFRESH_TOKEN } = req.cookies || {};
     if (!REFRESH_TOKEN) return next(new BadRequestError('Пользователь не найден'));
-    const payload:any = jwt.verify(REFRESH_TOKEN, config.auth.accessSecret as string);
+    const payload:any = jwt.verify(REFRESH_TOKEN, config.auth.refreshSecret as string);
 
     const user = await User.findById(payload._id).select('+tokens');
     if (!user) return next(new NotFoundError('Пользователь не найден'));
@@ -193,7 +187,7 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
       sameSite: 'none',
       secure: true,
       httpOnly: true,
-      maxAge: refreshExpiresInSeconds * 1000,
+      maxAge: 0,
     });
 
     res.json({ success: true });
@@ -223,17 +217,11 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
     if (!isExistsToken) return next(new UnauthorizedError('Токен не действителен'));
 
     /* Всё про токены */
-    const accessToken = createToken(
-      { _id: user._id },
-      config.auth.accessSecret as string,
+    const { accessToken, refreshToken } = createTwoTokens(
+      user._id as unknown as ObjectId,
       accessExpiresInSeconds,
-    );
-    const refreshToken = createToken(
-      { _id: user._id },
-      config.auth.refreshSecret as string,
       refreshExpiresInSeconds,
     );
-
     user.tokens = user.tokens.filter((token) => token.token !== REFRESH_TOKEN);
     user.tokens.push({ token: refreshToken });
     await user.save();
