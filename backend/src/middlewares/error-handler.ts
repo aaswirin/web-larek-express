@@ -1,3 +1,7 @@
+/**
+ * Разные ошибки
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 
@@ -28,6 +32,7 @@ const errorHandler = (
       }
     }
   }
+
   if (err.message.includes('E11000')) {
     return res
       .status(409)

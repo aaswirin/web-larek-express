@@ -147,7 +147,7 @@ const deleteProduct = async (
   return null;
 };
 
-/* CRUD */
+/* Акростих CRUD */
 export {
   createProduct,
   readProducts,

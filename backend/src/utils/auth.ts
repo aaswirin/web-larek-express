@@ -20,8 +20,8 @@ type TTokens = {
  * @return number - количество секунд
  */
 const getExpiryInSeconds = (expiry: string): number => {
-  // По умолчанию 3 дня
-  const defSeconds = 3 * 24 * 60 * 60;
+  // По умолчанию N дня
+  const defSeconds = config.auth.expiresDefaultInDay * 24 * 60 * 60;
 
   if (expiry === '') {
     return defSeconds;

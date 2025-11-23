@@ -4,11 +4,11 @@
 
 import { Schema } from 'mongoose';
 
-export interface IToken {
+interface IToken {
   token: string;
 }
 
-export const tokenSchema = new Schema<IToken>(
+const tokenSchema = new Schema<IToken>(
   {
     token: {
       type: String,
@@ -17,3 +17,8 @@ export const tokenSchema = new Schema<IToken>(
   },
   { _id: false },
 );
+
+export {
+  IToken,
+  tokenSchema,
+};

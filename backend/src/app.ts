@@ -13,15 +13,16 @@ import config from './config';
 /* Роутеры */
 import productRoutes from './routes/product';
 import authRoutes from './routes/auth';
+import uploadRoutes from './routes/upload';
+import orderRoutes from './routes/order';
 
 import errorHandler from './middlewares/error-handler';
 import { requestLogger, errorLogger } from './middlewares/logger';
 
 const app = express();
 
-/* TODO: Обработать невозможность связи с БД */
 mongoose.connect(config.database.address)
-  .catch((error) => console.log(error));
+  .catch((error) => console.error('Нет связи с  connection failed: ', error));
 
 // Для отладки
 // mongoose.set('debug', true);
@@ -39,23 +40,11 @@ app.use(cookieParser());
 
 /* Просто данные */
 app.use('/product', productRoutes);
-// app.use('/order', );
+app.use('/order', orderRoutes);
 /* Авторизация и прочая и прочая */
 app.use('/auth', authRoutes);
 /* Загрузка файлов */
-// app.use('/upload', );
-
-// заготовки
-// Данные
-// app.post('/order', (req, res) => console.log(req, res));
-// Файлы
-// app.post('/upload', (req, res) => console.log(req, res));
-// Авторизация и прочая и прочая
-// app.get('/auth/token', (req, res) => console.log(req, res));
-// app.post('/auth/login', (req, res) => console.log(req, res));
-// app.post('/auth/register', (req, res) => console.log(req, res));
-// app.get('/auth/user', (req, res) => console.log(req, res));
-// app.get('/auth/logout', (req, res) => console.log(req, res));
+app.use('/upload', uploadRoutes);
 
 app.use(requestLogger);
 app.use(errorLogger);

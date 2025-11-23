@@ -4,6 +4,7 @@
 
 import mongoose, { Schema, Document } from 'mongoose';
 import { IProductImage, imageSchema } from './image';
+import config from '../config';
 
 export interface IProduct extends Document {
   title: string;
@@ -18,8 +19,14 @@ const productSchema = new Schema<IProduct>({
     type: String,
     required: [true, 'Название должно быть указано'],
     unique: true,
-    minlength: [2, 'Название должно быть не менее 2 символов'],
-    maxlength: [30, 'Название должно быть не более 30 символов'],
+    minlength: [
+      config.validate.titleProduct.minlength,
+      `Минимальный размер названия, символов: ${config.validate.titleProduct.minlength}`,
+    ],
+    maxlength: [
+      config.validate.titleProduct.maxlength,
+      `Максимальный размер названия, символов: ${config.validate.titleProduct.maxlength}`,
+    ],
     trim: true,
   },
   image: {

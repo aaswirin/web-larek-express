@@ -64,7 +64,6 @@ const register = async (
 
     await user.save();
 
-    console.log(refreshToken, refreshExpiresInSeconds);
     res.cookie('REFRESH_TOKEN', refreshToken, {
       sameSite: 'none',
       secure: true,
