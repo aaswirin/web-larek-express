@@ -4,6 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
+import ParentError from "../errors/parent-error";
 
 const errorHandler = (
   err: Error,
@@ -11,7 +12,13 @@ const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
-  // Ошибки MongoDB
+  /* Мои ошибки */
+  if (err instanceof ParentError) {
+    return res
+      .status(err.statusCode)
+      .json({ message: err.message });
+  }
+  /* Ошибки MongoDB */
   if (err instanceof mongoose.mongo.MongoServerError) {
     const error: mongoose.mongo.MongoServerError = err;
     /* Это дубликаты */

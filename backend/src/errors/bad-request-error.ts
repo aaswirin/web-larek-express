@@ -1,13 +1,11 @@
 /**
  * Ошибка 400 - неверный запрос
  */
+import ParentError from './parent-error';
 
-class BadRequestError extends Error {
-  public statusCode: number;
-
-  constructor(message: string) {
-    super(message);
-    this.statusCode = 400;
+class BadRequestError extends ParentError {
+  constructor(message: string = 'Ошибка в запросе') {
+    super(message, 400);
   }
 }
 

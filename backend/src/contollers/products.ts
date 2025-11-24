@@ -19,30 +19,38 @@ const createProduct = async (
   res: Response,
   next: NextFunction,
 ) => {
+  const productObject: IProduct = req.body;
+
+  if (!productObject.title || !productObject.image) {
+    next(new BadRequestError('Название и изображение товара должны быть указаны'));
+    return null;
+  }
+
+  /* Такой товар есть? Искать без учёта регистра! */
+  const title = productObject.title.trim();
+  const count = await Product.find({ title: new RegExp(`^${title}$`, 'i') }).countDocuments();
+  /* Есть такой товар */
+  if (count) {
+    next(new ConflictError('Товар с таким названием уже существует'));
+    return null;
+  }
+
   try {
-    const productObject: IProduct = req.body;
-
-    if (!productObject.title || !productObject.image) {
-      next(new BadRequestError('Название и изображение товара должны быть указаны'));
-    }
-
     const newObject: IProduct = await Product.create(productObject);
 
     /* Отлично! Новый товар поступает в продажу */
     res.status(201).json(newObject);
   } catch (error: any) {
-    /* Товар уже есть */
     if (error.code === 11000) {
+      /* Товар уже есть */
       next(new ConflictError('Товар с таким названием уже существует'));
-    }
-
-    /* Валидация не прошла */
-    if (error.name === 'ValidationError') {
+    } else if (error.name === 'ValidationError') {
+      /* Валидация не прошла */
       next(new BadRequestError(error.message));
+    } else {
+      /* Что-то другое */
+      next(error);
     }
-
-    /* Что-то другое */
-    next(error);
   }
 
   return null;

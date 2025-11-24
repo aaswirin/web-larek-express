@@ -208,7 +208,7 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
     const { REFRESH_TOKEN } = req.cookies || {};
     if (!REFRESH_TOKEN) return next(new UnauthorizedError('Пользователь не найден'));
 
-    const payload:any = jwt.verify(REFRESH_TOKEN, config.auth.accessSecret as string);
+    const payload:any = jwt.verify(REFRESH_TOKEN, config.auth.refreshSecret as string);
     const user = await User.findById(payload._id).select('+tokens');
     if (!user) return next(new NotFoundError('Пользователь не найден'));
 

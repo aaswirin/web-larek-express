@@ -86,7 +86,7 @@ const createOrder = async (
         { $lt: new Date(Date.now() - config.order.dayToDelete * mSecondsInDay) },
     });
 
-    return res.status(201).json({
+    return res.status(200).json({
       id: newObject._id,
       total,
     });
