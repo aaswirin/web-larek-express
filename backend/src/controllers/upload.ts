@@ -19,7 +19,8 @@ const uploadFile = (req: Request, res: Response, next: NextFunction) => {
       return res.status(400).json({ error: 'Нет файла' });
     }
 
-    const targetDir = path.join(__dirname, `../../public/${config.files.uploadPath}`);
+    const targetDir = path.join(__dirname, `../public/${config.files.uploadPath}`);
+
     if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
 
     const targetPath = path.join(targetDir, req.file.filename);
