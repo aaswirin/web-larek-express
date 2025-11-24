@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import uploadMiddleware from '../middlewares/upload';
-import uploadFile from '../contollers/upload';
+import uploadFile from '../controllers/upload';
 
 const router = Router();
 

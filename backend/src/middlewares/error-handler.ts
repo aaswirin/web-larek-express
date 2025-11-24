@@ -4,7 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import ParentError from "../errors/parent-error";
+import ParentError from '../errors/parent-error';
 
 const errorHandler = (
   err: Error,

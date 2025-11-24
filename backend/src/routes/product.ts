@@ -8,7 +8,7 @@ import {
   readProducts,
   updateProduct,
   deleteProduct,
-} from '../contollers/products';
+} from '../controllers/products';
 import { validateProduct } from '../middlewares/validatons';
 
 const router = Router();

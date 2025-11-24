@@ -9,7 +9,7 @@ import {
   getUser,
   logout,
   refreshAccessToken,
-} from '../contollers/auth';
+} from '../controllers/auth';
 
 const router = Router();
 
