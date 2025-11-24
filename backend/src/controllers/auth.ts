@@ -62,7 +62,7 @@ const register = async (
 
     await user.save();
 
-    res.cookie('REFRESH_TOKEN', refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
       sameSite: 'lax',
       secure: false,
       httpOnly: true,
@@ -112,7 +112,7 @@ const login = async (
     user.tokens.push({ token: refreshToken });
     await user.save();
 
-    res.cookie('REFRESH_TOKEN', refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
       sameSite: 'lax',
       secure: false,
       httpOnly: true,
@@ -172,17 +172,17 @@ const getUser = async (
  */
 const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { REFRESH_TOKEN } = req.cookies || {};
-    if (!REFRESH_TOKEN) return next(new BadRequestError('Пользователь не найден'));
-    const payload:any = jwt.verify(REFRESH_TOKEN, config.auth.refreshSecret as string);
+    const { refreshToken } = req.cookies || {};
+    if (!refreshToken) return next(new BadRequestError('Пользователь не найден'));
+    const payload:any = jwt.verify(refreshToken, config.auth.refreshSecret as string);
 
     const user = await User.findById(payload._id).select('+tokens');
     if (!user) return next(new NotFoundError('Пользователь не найден'));
 
-    user.tokens = user.tokens.filter((token) => token.token !== REFRESH_TOKEN);
+    user.tokens = user.tokens.filter((token) => token.token !== refreshToken);
     await user.save();
 
-    res.cookie('REFRESH_TOKEN', REFRESH_TOKEN, {
+    res.cookie('refreshToken', refreshToken, {
       sameSite: 'lax',
       secure: false,
       httpOnly: true,
@@ -206,27 +206,27 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
  */
 const refreshAccessToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { REFRESH_TOKEN } = req.cookies || {};
-    if (!REFRESH_TOKEN) return next(new UnauthorizedError('Пользователь не найден'));
+    const { refreshToken } = req.cookies || {};
+    if (!refreshToken) return next(new UnauthorizedError('Пользователь не найден'));
 
-    const payload:any = jwt.verify(REFRESH_TOKEN, config.auth.refreshSecret as string);
+    const payload:any = jwt.verify(refreshToken, config.auth.refreshSecret as string);
     const user = await User.findById(payload._id).select('+tokens');
     if (!user) return next(new NotFoundError('Пользователь не найден'));
 
-    const isExistsToken = user.tokens.some((token) => token.token === REFRESH_TOKEN);
+    const isExistsToken = user.tokens.some((token) => token.token === refreshToken);
     if (!isExistsToken) return next(new UnauthorizedError('Токен не действителен'));
 
     /* Всё про токены */
-    const { accessToken, refreshToken } = createTwoTokens(
+    const { accessToken, refreshToken: refreshTokenNew } = createTwoTokens(
       user._id as unknown as ObjectId,
       accessExpiresInSeconds,
       refreshExpiresInSeconds,
     );
-    user.tokens = user.tokens.filter((token) => token.token !== REFRESH_TOKEN);
-    user.tokens.push({ token: refreshToken });
+    user.tokens = user.tokens.filter((token) => token.token !== refreshToken);
+    user.tokens.push({ token: refreshTokenNew });
     await user.save();
 
-    res.cookie('REFRESH_TOKEN', refreshToken, {
+    res.cookie('refreshToken', refreshTokenNew, {
       sameSite: 'lax',
       secure: false,
       httpOnly: true,
