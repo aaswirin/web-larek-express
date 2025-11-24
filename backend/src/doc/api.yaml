@@ -5,6 +5,16 @@ info:
   contact:
     email: andrey.a.svirin@yandex.ru
   version: 1.0.0
+servers:
+  - url: '{server}:3000'
+    variables:
+      servers:
+        default: http://localhost
+        enum:
+          - http://localhost
+          - http://weblarek.рф
+security:
+  - BearerAuth: []
 tags:
   - name: Товары
     description: Управление товарами
@@ -13,35 +23,221 @@ tags:
 paths:
   /:
     get:
+      security: []
       description: Выгрузить список товаров
       tags: [Товары]
+      responses:
+        '200':
+          description: Выгружен список товаров
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    $ref: '#/components/schemas/Products'
+                  total:
+                    type: number
+                    example: 1
+
     post:
       description: Создать новый товар
       tags: [Товары]
+      requestBody:
+        description: Новый товар
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      responses:
+        '201':
+          description: Товар создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Ошибка в запросе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '409':
+          description: Товар уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
   /{productId}:
     patch:
       description: Обновить данные о товаре
       tags: [Товары]
+      parameters:
+        - name: productId
+          in: path
+          description: Идентификатор товара
+          required: true
+          schema:
+            $ref: '#/components/schemas/IdType'
+      responses:
+        '200':
+          description: Товар обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Ошибка в запросе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '404':
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
     delete:
       description: Удалить товар
       tags: [Товары]
+      responses:
+        '200':
+          description: Товар удалён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Ошибка в запросе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '404':
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+  /upload:
+    post:
+      description: Загрузить изображение товара
+      tags: [Товары]
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Файл загружен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageType'
+        '400':
+          description: В запросе нет файла
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
   /register:
     post:
-      description: Выгрузить список товаров
+      description: Создать пользователя
       tags: [Авторизация]
   /login:
     post:
-      description: Выгрузить список товаров
+      description: Авторизация
       tags: [Авторизация]
   /user:
     get:
-      description: Выгрузить список товаров
+      security: []
+      description: Получить пользователя
       tags: [Авторизация]
   /logout:
     get:
-      description: Выгрузить список товаров
+      description: Выход
       tags: [Авторизация]
   /token:
     get:
-      description: Выгрузить список товаров
+      description: Обновить токен
       tags: [Авторизация]
+components:
+  schemas:
+    IdType:
+      type: string
+      required: true
+      example: 6919e442b083b9c31d33ef2f
+      format: ObjectId
+      minLength: 24
+      maxLength: 24
+      pattern: ^[a-z\d]{24}$
+    ImageType:
+      type: object
+      required: true
+      description: Изображение товара
+      properties:
+       fileName:
+         type: string
+         required: true
+         description: Имя файла
+         example: /images/Shell.png
+       originalName:
+         type: string
+         required: true
+         description: Название файла
+         example: Shell.png
+    Product:
+      type: object
+      properties:
+        _id:
+          $ref: '#/components/schemas/IdType'
+        title:
+          type: string
+          description: Название
+          required: true
+          example: '+3 часа в сутках'
+          minLength: 8
+          maxLength: 30
+        description:
+          type: string
+          description: Описание
+          required: true
+          example: 'Если планируете решать задачи в тренажёре, берите два.'
+        category:
+          type: string
+          description: Категория
+          required: true
+          example: софт-скил
+          enum:
+            - софт-скил
+            - хард-скил
+            - другое
+            - дополнительное
+            - кнопка
+        price:
+          type: number
+          example: 751
+        image:
+          $ref: '#/components/schemas/ImageType'
+    Products:
+      type: array
+      items:
+        $ref: '#/components/schemas/Product'
+    APIError:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Текст ошибки
+          required: true
+          example: Подробный текст ошибки
