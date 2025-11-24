@@ -5,6 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
+import config from '../config';
 
 /**
  * Загрузить файл
@@ -18,18 +19,18 @@ const uploadFile = (req: Request, res: Response, next: NextFunction) => {
       return res.status(400).json({ error: 'Нет файла' });
     }
 
-    const targetDir = path.join(__dirname, '../../public/images');
+    const targetDir = path.join(__dirname, `../../public/${config.files.uploadPath}`);
     if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
 
     const targetPath = path.join(targetDir, req.file.filename);
     fs.renameSync(req.file.path, targetPath);
 
     res.status(200).json({
-      fileName: `/images/${req.file.filename}`,
+      fileName: `/${config.files.uploadPath}/${req.file.filename}`,
       originalName: req.file.originalname,
     });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 
   return null;

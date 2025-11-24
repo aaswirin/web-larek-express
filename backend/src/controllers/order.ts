@@ -33,14 +33,10 @@ const createOrder = async (
     } = req.body;
 
     /* Обязательные поля */
-    if (!payment || !email || !phone || !address || !total || !items?.length) {
-      return next(new BadRequestError('Не все обязательные поля заполнены'));
-    }
+    if (!payment || !email || !phone || !address || !total || !items?.length) return next(new BadRequestError('Не все обязательные поля заполнены'));
 
     /* Проверка типа оплаты */
-    if (!['card', 'online'].includes(payment)) {
-      return next(new BadRequestError('Неверный способ оплаты'));
-    }
+    if (!['card', 'online'].includes(payment)) return next(new BadRequestError('Неверный способ оплаты'));
 
     /* Товары есть? */
     const products = await Product.find({ _id: { $in: items } });
@@ -63,9 +59,7 @@ const createOrder = async (
       return null;
     });
 
-    if (sumOrder !== total) {
-      return next(new BadRequestError(`Сумма заказа (${total}) не равна сумме по строкам (${sumOrder})`));
-    }
+    if (sumOrder !== total) return next(new BadRequestError(`Сумма заказа (${total}) не равна сумме по строкам (${sumOrder})`));
 
     /* Сохранить заказ для потомков
        ... и налоговой
@@ -86,12 +80,12 @@ const createOrder = async (
         { $lt: new Date(Date.now() - config.order.dayToDelete * mSecondsInDay) },
     });
 
-    return res.status(200).json({
+    res.status(200).json({
       id: newObject._id,
       total,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 
   return null;

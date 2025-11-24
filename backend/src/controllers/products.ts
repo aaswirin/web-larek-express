@@ -19,38 +19,28 @@ const createProduct = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const productObject: IProduct = req.body;
-
-  if (!productObject.title || !productObject.image) {
-    next(new BadRequestError('Название и изображение товара должны быть указаны'));
-    return null;
-  }
-
-  /* Такой товар есть? Искать без учёта регистра! */
-  const title = productObject.title.trim();
-  const count = await Product.find({ title: new RegExp(`^${title}$`, 'i') }).countDocuments();
-  /* Есть такой товар */
-  if (count) {
-    next(new ConflictError('Товар с таким названием уже существует'));
-    return null;
-  }
-
   try {
+    const productObject: IProduct = req.body;
+
+    if (!productObject.title || !productObject.image) return next(new BadRequestError('Название и изображение товара должны быть указаны'));
+
+    /* Такой товар есть? Искать без учёта регистра! */
+    const title = productObject.title.trim();
+    const count = await Product.find({ title: new RegExp(`^${title}$`, 'i') }).countDocuments();
+    /* Есть такой товар */
+    if (count) return next(new ConflictError('Товар с таким названием уже существует'));
+
     const newObject: IProduct = await Product.create(productObject);
 
     /* Отлично! Новый товар поступает в продажу */
     res.status(201).json(newObject);
   } catch (error: any) {
-    if (error.code === 11000) {
-      /* Товар уже есть */
-      next(new ConflictError('Товар с таким названием уже существует'));
-    } else if (error.name === 'ValidationError') {
-      /* Валидация не прошла */
-      next(new BadRequestError(error.message));
-    } else {
-      /* Что-то другое */
-      next(error);
-    }
+    /* Товар уже есть */
+    if (error.code === 11000) return next(new ConflictError('Товар с таким названием уже существует'));
+    /* Валидация не прошла */
+    if (error.name === 'ValidationError') return next(new BadRequestError(error.message));
+    /* Что-то другое */
+    return next(error);
   }
 
   return null;
@@ -76,7 +66,7 @@ const readProducts = async (
       total: products.length,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 
   return null;
@@ -104,20 +94,16 @@ const updateProduct = async (
     });
 
     /* Упс... Не получилось */
-    if (!updatedObject) {
-      next(new NotFoundError('Товар не найден'));
-    }
+    if (!updatedObject) return next(new NotFoundError('Товар не найден'));
 
     /* Вернуть обновлённый товар */
     res.status(200).json(updatedObject);
   } catch (error: any) {
     /* Валидация не прошла */
-    if (error.name === 'ValidationError') {
-      next(new BadRequestError(error.message));
-    }
+    if (error.name === 'ValidationError') return next(new BadRequestError(error.message));
 
     /* Что-то другое */
-    next(error);
+    return next(error);
   }
 
   return null;
@@ -141,15 +127,13 @@ const deleteProduct = async (
     const deletedObject = await Product.findByIdAndDelete(productId);
 
     /* Нет такого товара */
-    if (!deletedObject) {
-      next(new NotFoundError('Товар не найден'));
-    }
+    if (!deletedObject) return next(new NotFoundError('Товар не найден'));
 
     /* Вернуть удалённый товар */
     res.status(200).json(deletedObject);
   } catch (error: any) {
     /* Что-то пошло не так */
-    next(error);
+    return next(error);
   }
 
   return null;

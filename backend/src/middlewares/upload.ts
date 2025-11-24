@@ -9,7 +9,7 @@ import fs from 'fs';
 import config from '../config';
 
 /* Каталог-помойка */
-const tempDir = path.join(__dirname, '../../tmp');
+const tempDir = path.join(__dirname, `../public/${config.files.uploadPathTemp}`);
 
 /* Если нет, то создать! */
 if (!fs.existsSync(tempDir)) {

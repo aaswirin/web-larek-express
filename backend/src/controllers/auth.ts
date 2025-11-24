@@ -38,11 +38,9 @@ const register = async (
   next: NextFunction,
 ) => {
   try {
-    const { name, email, password } = req.body;
+    const { name = 'Ё-мое', email, password } = req.body;
 
-    if (!name || !email || !password) {
-      return next(new BadRequestError('Все поля должны быть указаны'));
-    }
+    if (!name || !email || !password) return next(new BadRequestError('Все поля должны быть указаны'));
 
     const isExistUser = await User.findOne({ email }).select('+tokens');
 
@@ -65,10 +63,11 @@ const register = async (
     await user.save();
 
     res.cookie('REFRESH_TOKEN', refreshToken, {
-      sameSite: 'none',
-      secure: true,
+      sameSite: 'lax',
+      secure: false,
       httpOnly: true,
       maxAge: refreshExpiresInSeconds * 1000,
+      path: '/',
     });
 
     res.status(201).json({
@@ -77,7 +76,7 @@ const register = async (
       accessToken,
     });
   } catch (error: any) {
-    next(error);
+    return next(error);
   }
 
   return null;
@@ -114,10 +113,11 @@ const login = async (
     await user.save();
 
     res.cookie('REFRESH_TOKEN', refreshToken, {
-      sameSite: 'none',
-      secure: true,
+      sameSite: 'lax',
+      secure: false,
       httpOnly: true,
       maxAge: refreshExpiresInSeconds * 1000,
+      path: '/',
     });
 
     res.status(200).json({
@@ -126,7 +126,7 @@ const login = async (
       accessToken,
     });
   } catch (error: any) {
-    next(error);
+    return next(error);
   }
 
   return null;
@@ -158,7 +158,7 @@ const getUser = async (
       user: { name: user.name, email: user.email, id: user._id },
     });
   } catch (error: any) {
-    next(error);
+    return next(error);
   }
 
   return null;
@@ -183,15 +183,16 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
     await user.save();
 
     res.cookie('REFRESH_TOKEN', REFRESH_TOKEN, {
-      sameSite: 'none',
-      secure: true,
+      sameSite: 'lax',
+      secure: false,
       httpOnly: true,
       maxAge: 0,
+      path: '/',
     });
 
     res.json({ success: true });
   } catch (err: any) {
-    next(err);
+    return next(err);
   }
 
   return null;
@@ -226,10 +227,11 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
     await user.save();
 
     res.cookie('REFRESH_TOKEN', refreshToken, {
-      sameSite: 'none',
-      secure: true,
+      sameSite: 'lax',
+      secure: false,
       httpOnly: true,
       maxAge: refreshExpiresInSeconds * 1000,
+      path: '/',
     });
 
     res.json({
@@ -238,7 +240,7 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
       accessToken,
     });
   } catch (err: any) {
-    next(err);
+    return next(err);
   }
 
   return null;

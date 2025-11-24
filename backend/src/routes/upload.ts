@@ -5,9 +5,10 @@
 import { Router } from 'express';
 import uploadMiddleware from '../middlewares/upload';
 import uploadFile from '../controllers/upload';
+import auth from '../middlewares/auth';
 
 const router = Router();
 
-router.post('/', uploadMiddleware.single('file'), uploadFile);
+router.post('/', auth, uploadMiddleware.single('file'), uploadFile);
 
 export default router;

@@ -10,12 +10,13 @@ import {
   deleteProduct,
 } from '../controllers/products';
 import { validateProduct } from '../middlewares/validatons';
+import auth from '../middlewares/auth';
 
 const router = Router();
 
 router.get('/', readProducts);
-router.post('/', validateProduct, createProduct);
-router.patch('/:productId', updateProduct);
-router.delete('/:productId', deleteProduct);
+router.post('/', auth, validateProduct, createProduct);
+router.patch('/:productId', auth, updateProduct);
+router.delete('/:productId', auth, deleteProduct);
 
 export default router;

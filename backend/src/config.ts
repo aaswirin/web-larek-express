@@ -13,7 +13,8 @@ const config = {
     refreshExpires: process.env.AUTH_REFRESH_TOKEN_EXPIRY,
     accessSecret: process.env.AUTH_ACCESS_TOKEN_SECRET,
     refreshSecret: process.env.AUTH_REFRESH_TOKEN_SECRET,
-    expiresDefaultInDay: 3, // Время жизни токена в днях
+    expiresRefreshDefaultInDay: 7, // Время жизни токена refresh в днях
+    expiresAccessDefaultInMinute: 10, // Время жизни токена access в минутах
   },
 
   /* Сервер Node.js */
@@ -29,6 +30,12 @@ const config = {
   /* Заказ */
   order: {
     dayToDelete: 111, // Количество дней для удаления старых заказов
+  },
+
+  /* Файлы */
+  files: {
+    uploadPath: process.env.UPLOAD_PATH || 'images',
+    uploadPathTemp: process.env.UPLOAD_PATH_TEMP || 'temp',
   },
 
   /* Это cors */

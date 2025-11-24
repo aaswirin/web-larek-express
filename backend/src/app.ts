@@ -37,6 +37,7 @@ app.use(
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '/public')));
 app.use(cookieParser());
+app.use(requestLogger);
 
 /* Просто данные */
 app.use('/product', productRoutes);
@@ -46,7 +47,6 @@ app.use('/auth', authRoutes);
 /* Загрузка файлов */
 app.use('/upload', uploadRoutes);
 
-app.use(requestLogger);
 app.use(errorLogger);
 app.use(celebrateErrors());
 app.use(errorHandler);
