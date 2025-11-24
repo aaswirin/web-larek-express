@@ -10,7 +10,7 @@ import {
   deleteProduct,
 } from '../controllers/products';
 import { validateProduct } from '../middlewares/validatons';
-import auth from '../middlewares/auth';
+// import auth from '../middlewares/auth';
 
 const router = Router();
 
