@@ -190,7 +190,7 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
       path: '/',
     });
 
-    res.json({ success: true });
+    res.status(200).json({ success: true });
   } catch (err: any) {
     return next(err);
   }
@@ -234,7 +234,7 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
       path: '/',
     });
 
-    res.json({
+    res.status(200).json({
       success: true,
       user: { name: user.name, email: user.email },
       accessToken,

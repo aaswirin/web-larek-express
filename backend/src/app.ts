@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { errors as celebrateErrors } from 'celebrate';
+import swaggerUi from 'swagger-ui-express';
 import config from './config';
 
 /* Роутеры */
@@ -15,9 +16,13 @@ import productRoutes from './routes/product';
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/upload';
 import orderRoutes from './routes/order';
+// import swaggerDocument from './doc/api.json';
 
 import errorHandler from './middlewares/error-handler';
 import { requestLogger, errorLogger } from './middlewares/logger';
+
+/* Описание API */
+const swaggerDocument = require('./doc/api.json');
 
 const app = express();
 
@@ -39,6 +44,8 @@ app.use(express.static(path.join(__dirname, '/public')));
 app.use(cookieParser());
 app.use(requestLogger);
 
+/* Описание API */
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 /* Просто данные */
 app.use('/product', productRoutes);
 app.use('/order', orderRoutes);

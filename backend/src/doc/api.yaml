@@ -12,7 +12,7 @@ servers:
         default: http://localhost
         enum:
           - http://localhost
-          - http://weblarek.рф
+          - https://weblarek.рф
 security:
   - BearerAuth: []
 tags:
@@ -20,12 +20,14 @@ tags:
     description: Управление товарами
   - name: Авторизация
     description: Управление авторизацией
+  - name: Заказы
+    description: Управление заказами
 paths:
-  /:
+  /product:
     get:
-      security: []
+      security: [ ]
       description: Выгрузить список товаров
-      tags: [Товары]
+      tags: [ Товары ]
       responses:
         '200':
           description: Выгружен список товаров
@@ -42,14 +44,14 @@ paths:
 
     post:
       description: Создать новый товар
-      tags: [Товары]
+      tags: [ Товары ]
       requestBody:
         description: Новый товар
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Product'
-        required: true
       responses:
         '201':
           description: Товар создан
@@ -69,10 +71,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/APIError'
-  /{productId}:
+  /product/{productId}:
     patch:
       description: Обновить данные о товаре
-      tags: [Товары]
+      tags: [ Товары ]
       parameters:
         - name: productId
           in: path
@@ -80,6 +82,13 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/IdType'
+      requestBody:
+        description: Обновляемый товар
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
       responses:
         '200':
           description: Товар обновлён
@@ -101,7 +110,14 @@ paths:
                 $ref: '#/components/schemas/APIError'
     delete:
       description: Удалить товар
-      tags: [Товары]
+      tags: [ Товары ]
+      parameters:
+        - name: productId
+          in: path
+          description: Идентификатор товара
+          required: true
+          schema:
+            $ref: '#/components/schemas/IdType'
       responses:
         '200':
           description: Товар удалён
@@ -124,8 +140,9 @@ paths:
   /upload:
     post:
       description: Загрузить изображение товара
-      tags: [Товары]
+      tags: [ Товары ]
       requestBody:
+        required: true
         content:
           application/octet-stream:
             schema:
@@ -150,54 +167,285 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/APIError'
-  /register:
+  /auth/register:
     post:
+      security: [ ]
       description: Создать пользователя
-      tags: [Авторизация]
-  /login:
+      tags: [ Авторизация ]
+      requestBody:
+        description: Новый пользователь
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessType'
+                  user:
+                    $ref: '#/components/schemas/User'
+                  accessToken:
+                    $ref: '#/components/schemas/TokenType'
+        '400':
+          description: Ошибка в запросе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '409':
+          description: Товар уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+  /auth/login:
     post:
+      security: [ ]
       description: Авторизация
-      tags: [Авторизация]
-  /user:
+      tags: [ Авторизация ]
+      requestBody:
+        description: Авторизировать пользователя
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  $ref: '#/components/schemas/EMailType'
+                password:
+                  $ref: '#/components/schemas/PasswordType'
+      responses:
+        '200':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessType'
+                  user:
+                    type: object
+                    properties:
+                      name:
+                        $ref: '#/components/schemas/UserNameType'
+                      email:
+                        $ref: '#/components/schemas/EMailType'
+                      accessToken:
+                        $ref: '#/components/schemas/TokenType'
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+  /auth/user:
     get:
-      security: []
       description: Получить пользователя
-      tags: [Авторизация]
-  /logout:
+      tags: [ Авторизация ]
+      parameters:
+        - name: authorization
+          in: header
+          description: Токен авторизации
+          required: true
+          schema:
+            $ref: '#/components/schemas/TokenType'
+      responses:
+        '200':
+          description: Пользователь отдан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessType'
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+  /auth/logout:
     get:
+      security: [ ]
       description: Выход
-      tags: [Авторизация]
-  /token:
+      tags: [ Авторизация ]
+      parameters:
+        - name: refreshToken
+          in: cookie
+          description: Токен авторизации
+          required: true
+          schema:
+            $ref: '#/components/schemas/TokenType'
+      responses:
+        '200':
+          description: Пользователь вышел
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessType'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+  /auth/token:
     get:
+      security: [ ]
       description: Обновить токен
-      tags: [Авторизация]
+      tags: [ Авторизация ]
+      parameters:
+        - name: refreshToken
+          in: cookie
+          description: Токен авторизации
+          required: true
+          schema:
+            $ref: '#/components/schemas/TokenType'
+      responses:
+        '200':
+          description: Токен обновлён
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessType'
+                  accessToken:
+                    $ref: '#/components/schemas/TokenType'
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+  /order:
+    post:
+      security: [ ]
+      description: Создать новый Заказ
+      tags: [ Заказы ]
+      requestBody:
+        description: Новый заказ
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '201':
+          description: Товар создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Ошибка в запросе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+        '409':
+          description: Товар уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
 components:
   schemas:
     IdType:
       type: string
+      description: Идентификатор
       required: true
       example: 6919e442b083b9c31d33ef2f
       format: ObjectId
       minLength: 24
       maxLength: 24
       pattern: ^[a-z\d]{24}$
+    UserNameType:
+      type: string
+      description: Имя пользователя
+      required: true
+      example: 'Ванька Жуков'
+      minLength: 2
+      maxLength: 30
+    EMailType:
+      type: string
+      description: EMail пользователя
+      required: true
+      example: grandfather@village.рф
+      pattern: ?:[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+(?:\.[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?|\[(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9\x2d]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)]
+    PhoneType:
+      type: string
+      description: Телефон пользователя
+      required: true
+      example: +7(123)456-78-90
+      pattern: ^((8|\+7)[- ]?)?(\(?\d{3}\)?[- ]?)?[\d\- ]{7,10}$
+    PasswordType:
+      type: string
+      description: Пароль
+      required: true
+      example: 123_%fgRT-321
+      minLength: 2
+      pattern: ^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*\W).{8,}$
+    TokenType:
+      type: string
+      description: Token для авторизации
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
     ImageType:
       type: object
       required: true
       description: Изображение товара
       properties:
-       fileName:
-         type: string
-         required: true
-         description: Имя файла
-         example: /images/Shell.png
-       originalName:
-         type: string
-         required: true
-         description: Название файла
-         example: Shell.png
+        fileName:
+          type: string
+          required: true
+          description: Имя файла
+          example: /images/Shell.png
+        originalName:
+          type: string
+          required: true
+          description: Название файла
+          example: Shell.png
+    SuccessType:
+      type: boolean
+      description: Операция успешно выполнена
+      example: true
     Product:
       type: object
+      description: Товар
       properties:
         _id:
           $ref: '#/components/schemas/IdType'
@@ -231,10 +479,55 @@ components:
           $ref: '#/components/schemas/ImageType'
     Products:
       type: array
+      description: Список товаров
       items:
         $ref: '#/components/schemas/Product'
+    User:
+      type: object
+      description: Пользователь
+      properties:
+        _id:
+          $ref: '#/components/schemas/IdType'
+        name:
+          $ref: '#/components/schemas/UserNameType'
+        email:
+          $ref: '#/components/schemas/EMailType'
+        password:
+          $ref: '#/components/schemas/PasswordType'
+    Order:
+      type: object
+      description: Заказ
+      properties:
+        _id:
+          $ref: '#/components/schemas/IdType'
+        payment:
+          type: string
+          description: Тип оплаты
+          required: true
+          enum:
+            - card'
+            - online
+        email:
+          $ref: '#/components/schemas/EMailType'
+        phone:
+          $ref: '#/components/schemas/PhoneType'
+        address:
+          type: string
+          description: Адрес
+          required: true
+        total:
+          type: number
+          description: Сумма заказа
+          required: true
+        items:
+          type: array
+          description: Сумма заказа
+          required: true
+          items:
+            $ref: '#/components/schemas/IdType'
     APIError:
       type: object
+      description: Сообщение об ошибке
       properties:
         message:
           type: string
