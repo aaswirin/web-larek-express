@@ -4,6 +4,7 @@ import { ElementType } from 'react';
 import { useLocation } from 'react-router-dom';
 import EditIcon from "../../assets/edit.svg?react";
 import styles from './card-admin.module.scss';
+import { convertPriceToString } from "../../utils/product-utils";
 
 type CardProps = {
 	dataCard: IProduct;
@@ -26,7 +27,7 @@ export default function CardAdmin({
 		>
 			<img className={styles.card__image} src={image.fileName} alt='' />
 			<h2 className={styles.card__title}>{title}</h2>
-			{price ? `${price} синапсов` : 'Бесценно'}
+			{price ? convertPriceToString(price) : 'Бесценно'}
 			<button className={styles.card__action} ><EditIcon/></button>
 		</Component>
 	);

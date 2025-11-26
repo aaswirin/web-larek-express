@@ -8,6 +8,7 @@ import { IProduct } from '../../utils/types';
 import Button from '../button/button';
 import styles from './card.module.scss';
 import { useIsBasket } from './hooks/useIsBasket';
+import { convertPriceToString } from "../../utils/product-utils.ts";
 
 type CardProps = {
 	dataCard: IProduct;
@@ -83,7 +84,7 @@ export default function Card({
 						</Button>
 					)}
 					<span className={styles.card__price}>
-						{price ? `${price} синапсов` : 'Бесценно'}
+						{price ? convertPriceToString(price) : 'Бесценно'}
 					</span>
 				</div>
 			</div>

@@ -2,6 +2,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { AppRoute } from '../../utils/constants';
 import Button from '../button/button';
 import styles from "./order.module.scss";
+import {convertPriceToString} from "../../utils/product-utils.ts";
 
 export function OrderSuccess() {
 	const location = useLocation();
@@ -13,7 +14,7 @@ export function OrderSuccess() {
 	return (
 		<div className={styles.order__success}>
 			<h2 className={styles.order__title}>Заказ оформлен</h2>
-			<p className={styles.order__description}>Списано {orderResponse?.total} синапсов</p>
+			<p className={styles.order__description}>Списано {convertPriceToString(orderResponse?.total)}</p>
 			<Button component={Link} to={{pathname: AppRoute.Main}} replace>За новыми покупками!</Button>
 	</div>
 	)
